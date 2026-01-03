@@ -105,11 +105,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: kernel-los23-${{ needs.build.outputs.timestamp }}
-          name: Weekly build - ${{ needs.build.outputs.date }} (LOS23)
+          tag_name: kernel-oneui-${{ needs.build.outputs.timestamp }}
+          name: Weekly build - ${{ needs.build.outputs.date }} (OneUI)
           draft: false
           prerelease: false
           files: |
-            artifacts/non-ksu-zip/aosp-perf-neon-non-ksu-*.zip
-            artifacts/ksu-zip/aosp-perf-neon-ksu-*.zip
+            artifacts/non-ksu-zip/oneui-perf-neon-non-ksu-*.zip
+            artifacts/ksu-zip/oneui-perf-neon-ksu-*.zip
           overwrite_files: true
