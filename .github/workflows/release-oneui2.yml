@@ -1,0 +1,115 @@
+name: Weekly Kernel Build & Release (master branch)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    outputs:
+      timestamp: ${{ steps.ts.outputs.TIME }}
+      date: ${{ steps.ts.outputs.DATE }}
+    strategy:
+      matrix:
+        build-type: [non-ksu, ksu]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            glibc-source libghc-libyaml-dev libyaml-dev \
+            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
+            binutils device-tree-compiler libtfm-dev libelf-dev cpio \
+            kmod nano bc bison ca-certificates curl flex gcc git \
+            libc6-dev libssl-dev openssl python-is-python3 ssh wget \
+            zip zstd sudo make clang gcc-arm-linux-gnueabi \
+            software-properties-common build-essential libarchive-tools \
+            gcc-aarch64-linux-gnu python2
+
+      - name: Clone kernel repo & prepare for compile
+        run: |
+          git clone https://github.com/riarumoda/kernel_samsung_a9y18qlte --depth=1 -b master
+          cp ksumakefile.patch kernel_samsung_a9y18qlte/
+          cp compile.sh kernel_samsung_a9y18qlte/
+          chmod +x ./kernel_samsung_a9y18qlte/compile.sh
+
+      - name: Compile kernel (${{ matrix.build-type }})
+        run: |
+          if [[ "${{ matrix.build-type }}" == "ksu" ]]; then
+            cd kernel_samsung_a9y18qlte/
+            ./compile.sh --ksu
+            cd ..
+          else
+            cd kernel_samsung_a9y18qlte/
+            ./compile.sh --no-ksu
+            cd ..
+          fi
+
+      - name: Timestamp
+        id: ts
+        run: |
+          DATE=$(date +'%Y%m%d')
+          TIME=$(date +'%s')
+          echo "DATE=$DATE" >> $GITHUB_OUTPUT
+          echo "TIME=$TIME" >> $GITHUB_OUTPUT
+
+      - name: Clone AnyKernel3
+        run: git clone https://github.com/riarumoda/AnyKernel3 AnyKernel3 --depth=1
+
+      - name: Copy kernel artifacts
+        run: |
+          cp kernel_samsung_a9y18qlte/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+          sed -i 's/supported.versions=11-16/supported.versions=10/' AnyKernel3/anykernel.sh
+          sed -i 's/device.name1=sweet/device.name1=a9y18qlte/' AnyKernel3/anykernel.sh
+          sed -i 's/device.name2=sweetin/device.name2=a9y18qltexx/' AnyKernel3/anykernel.sh
+          sed -i 's/BLOCK=/dev/block/bootdevice/by-name/boot;/BLOCK=/dev/block/platform/soc/1da4000.ufshc/by-name/boot;/' AnyKernel3/anykernel.sh
+
+      - name: Zip AnyKernel3 contents
+        run: |
+          ZIPNAME="oneui-perf-neon-${{ matrix.build-type }}-master-${{ steps.ts.outputs.DATE }}-${{ steps.ts.outputs.TIME }}-a9y18qlte.zip"
+          cd AnyKernel3
+          zip -rq9 "../$ZIPNAME" ./*
+
+      - name: Upload artifacts (kernel)
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.build-type }}-zip
+          path: |
+            *.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: List downloaded zips
+        run: ls -lah artifacts
+
+      - name: Create Release and Upload builds
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: kernel-los23-${{ needs.build.outputs.timestamp }}
+          name: Weekly build - ${{ needs.build.outputs.date }} (LOS23)
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/non-ksu-zip/aosp-perf-neon-non-ksu-*.zip
+            artifacts/ksu-zip/aosp-perf-neon-ksu-*.zip
+          overwrite_files: true
