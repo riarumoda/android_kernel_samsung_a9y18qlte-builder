@@ -48,6 +48,7 @@ setup_toolchain() {
   cd ..
   export HOSTCFLAGS="-I$HOME/openssl1.1/include"
   export HOSTLDFLAGS="-L$HOME/openssl1.1/lib -Wl,-rpath,$HOME/openssl1.1/lib"
+  export LD_LIBRARY_PATH="$HOME/.openssl1.1/lib:$LD_LIBRARY_PATH"
 }
 
 # Update PATH
