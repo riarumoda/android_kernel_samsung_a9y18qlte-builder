@@ -33,7 +33,7 @@ setup_toolchain() {
 
   if [ ! -d "$PWD/gcc64" ]; then
     echo "Downloading GCC..."
-    git clone git clone https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 --depth=1 gcc64
+    git clone https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 --depth=1 gcc64
   else
     echo "Local gcc dirs found, using them."
   fi
