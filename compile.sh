@@ -43,8 +43,8 @@ setup_toolchain() {
   tar -xf openssl-1.1.1w.tar.gz
   cd openssl-1.1.1w
   ./config --prefix=$HOME/openssl1.1 --openssldir=$HOME/openssl1.1
-  make -j$(nproc)
-  make install
+  make -s -j$(nproc)
+  make -s install
   cd ..
   export HOSTCFLAGS="-I$HOME/openssl1.1/include"
   export HOSTLDFLAGS="-L$HOME/openssl1.1/lib -Wl,-rpath,$HOME/openssl1.1/lib"
