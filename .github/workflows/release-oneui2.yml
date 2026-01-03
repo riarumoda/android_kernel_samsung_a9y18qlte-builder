@@ -70,7 +70,7 @@ jobs:
           sed -i 's/supported.versions=11-16/supported.versions=10/' AnyKernel3/anykernel.sh
           sed -i 's/device.name1=sweet/device.name1=a9y18qlte/' AnyKernel3/anykernel.sh
           sed -i 's/device.name2=sweetin/device.name2=a9y18qltexx/' AnyKernel3/anykernel.sh
-          sed -i 's/BLOCK=/dev/block/bootdevice/by-name/boot;/BLOCK=/dev/block/platform/soc/1da4000.ufshc/by-name/boot;/' AnyKernel3/anykernel.sh
+          sed -i 's|BLOCK=/dev/block/bootdevice/by-name/boot;|BLOCK=/dev/block/platform/soc/1da4000.ufshc/by-name/boot;|' AnyKernel3/anykernel.sh
 
       - name: Zip AnyKernel3 contents
         run: |
