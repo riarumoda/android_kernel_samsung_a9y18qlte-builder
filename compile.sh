@@ -37,12 +37,23 @@ setup_toolchain() {
   else
     echo "Local gcc dirs found, using them."
   fi
+
+  echo "Setting up openssl 1.1..."
+  wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz
+  tar -xf openssl-1.1.1w.tar.gz
+  cd openssl-1.1.1w
+  ./config --prefix=$HOME/openssl1.1 --openssldir=$HOME/openssl1.1
+  make -j$(nproc)
+  make install
+  cd ..
+  export HOSTCFLAGS="-I$HOME/openssl1.1/include"
+  export HOSTLDFLAGS="-L$HOME/openssl1.1/lib -Wl,-rpath,$HOME/openssl1.1/lib"
 }
 
 # Update PATH
 update_path() {
   echo "Updating PATH..."
-  export PATH="$GCC64_DIR/bin/:/usr/bin:$PATH"
+  export PATH="$GCC64_DIR/bin/:$HOME/openssl1.1/bin:/usr/bin:$PATH"
 }
 
 # KSU Setup

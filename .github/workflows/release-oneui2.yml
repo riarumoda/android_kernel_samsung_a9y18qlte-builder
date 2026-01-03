@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       timestamp: ${{ steps.ts.outputs.TIME }}
       date: ${{ steps.ts.outputs.DATE }}
@@ -25,14 +25,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            glibc-source libghc-libyaml-dev libyaml-dev \
-            binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
-            binutils device-tree-compiler libtfm-dev libelf-dev cpio \
-            kmod nano bc bison ca-certificates curl flex gcc git \
-            libc6-dev libssl-dev openssl python-is-python3 ssh wget \
-            zip zstd sudo make clang gcc-arm-linux-gnueabi \
-            software-properties-common build-essential libarchive-tools \
-            gcc-aarch64-linux-gnu python2
+          build-essential bc bison ca-certificates cpio curl flex git \
+          glibc-source kmod nano ssh wget zip zstd sudo make \
+          device-tree-compiler libelf-dev libssl-dev libyaml-dev \
+          binutils binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi \
+          gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi clang \
+          libc6-dev python-is-python3 software-properties-common libarchive-tools
 
       - name: Clone kernel repo & prepare for compile
         run: |
