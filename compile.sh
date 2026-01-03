@@ -39,22 +39,29 @@ setup_toolchain() {
   fi
 
   echo "Setting up openssl 1.1..."
-  wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz
-  tar -xf openssl-1.1.1w.tar.gz
-  cd openssl-1.1.1w
-  ./config --prefix=$HOME/openssl1.1 --openssldir=$HOME/openssl1.1
-  make -s -j$(nproc)
-  make -s install
-  cd ..
-  export HOSTCFLAGS="-I$HOME/openssl1.1/include"
-  export HOSTLDFLAGS="-L$HOME/openssl1.1/lib -Wl,-rpath,$HOME/openssl1.1/lib"
-  export LD_LIBRARY_PATH="$HOME/.openssl1.1/lib:$LD_LIBRARY_PATH"
+  local OPENSSL_DIR="$HOME/.openssl1.1"
+  
+  if [ ! -d "$OPENSSL_DIR" ]; then
+    wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz
+    tar -xf openssl-1.1.1w.tar.gz
+    cd openssl-1.1.1w
+    ./config --prefix="$OPENSSL_DIR" --openssldir="$OPENSSL_DIR"
+    make -s -j$(nproc)
+    make -s install
+    cd ..
+    rm -rf openssl-1.1.1w*
+  fi
+
+  export HOSTCFLAGS="-I$OPENSSL_DIR/include"
+  export HOSTLDFLAGS="-L$OPENSSL_DIR/lib -Wl,-rpath,$OPENSSL_DIR/lib"
+  export LD_LIBRARY_PATH="$OPENSSL_DIR/lib:$LD_LIBRARY_PATH"
+  export MY_OPENSSL_DIR="$OPENSSL_DIR"
 }
 
 # Update PATH
 update_path() {
   echo "Updating PATH..."
-  export PATH="$GCC64_DIR/bin/:$HOME/openssl1.1/bin:/usr/bin:$PATH"
+  export PATH="$GCC64_DIR/bin/:$HOME/.openssl1.1/bin:/usr/bin:$PATH"
 }
 
 # KSU Setup
@@ -80,7 +87,10 @@ compile_kernel() {
   echo -e "\nStarting compilation..."
   sed -i 's/# CONFIG_LOCALVERSION is not set/CONFIG_LOCALVERSION="-perf-neon"/' arch/arm64/configs/a9y18qlte_eur_open_defconfig
   sed -i 's/CONFIG_LOCALVERSION_AUTO=y/# CONFIG_LOCALVERSION_AUTO is not set/' arch/arm64/configs/a9y18qlte_eur_open_defconfig
-  make O=out ARCH=arm64 a9y18qlte_eur_open_defconfig
+  make O=out ARCH=arm64 \
+    HOSTCFLAGS="$HOSTCFLAGS" \
+    HOSTLDFLAGS="$HOSTLDFLAGS" \
+    a9y18qlte_eur_open_defconfig
   make -j$(nproc --all) \
     ARCH=arm64 \
     O=out \
@@ -93,7 +103,10 @@ compile_kernel() {
     OBJCOPY=aarch64-linux-android-objcopy \
     OBJDUMP=aarch64-linux-android-objdump \
     STRIP=aarch64-linux-android-strip \
-    CROSS_COMPILE=aarch64-linux-android-
+    CROSS_COMPILE=aarch64-linux-android- \
+    HOSTCFLAGS="$HOSTCFLAGS" \
+    HOSTLDFLAGS="$HOSTLDFLAGS" \
+    OPENSSL="$MY_OPENSSL_DIR/bin/openssl"
 }
 
 # Main function
